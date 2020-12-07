@@ -61,7 +61,23 @@ router.post("/users", async (req, res) => {
 });
 
 // PATCH
-router.patch("/users/:id", (req, res) => {
+router.patch("/users/:id", async (req, res) => {
+    // aggiorno la lista
+    users.length = 0;
+    const list = await db.collection('users').get();
+    list.forEach(doc => users.push(doc.data()));
+
+    if(!req.body.name) {
+        return res.status(400).json({message: "You have to pass a name"});
+    }
+
+    const u = await db.collection('users').doc(req.params.id).get();
+    if(!u.data()) {
+        return res.status(404).json({message: "User not found"});
+    }
+
+    db.collection('users').doc(req.params.id).set({name: req.body.name}, {merge: true});
+
     // errore
     const user = users.find(val => val.id === Number(req.params.id));
     user.name = req.body.name;
